@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
 from sklearn.preprocessing import StandardScaler
 
@@ -67,6 +68,70 @@ def main():
     model=trainmodel(x_train,y_train)
 
     evaluate(model,x_test,y_test)
+
+    print("Enter the new patient details")
+
+    new_patient = []
+
+    numeric_limit={
+        "age":(0,100),
+        "trestbps": (80, 250),
+        "chol": (100, 600),
+        "thalach": (60, 250),
+        "oldpeak": (0, 10)
+    }
+
+    for feature in x.columns:
+        if feature in ["sex", "cp", "fbs", "restecg", "exang", "slope", "ca", "thal"]:
+            value = int(input(f"Enter {feature} : "))
+            while True:
+                if feature == "sex" and value in [0,1]:
+                    break
+                elif feature == "cp" and value in [0,1,2,3]:
+                    break
+                elif feature == "fbs" and value in [0,1]:
+                    break
+                elif feature == "restecg" and value in [0,1,2]:
+                    break
+                elif feature == "exang" and value in [0,1]:
+                    break
+                elif feature == "slope" and value in [0,1,2]:
+                    break
+                elif feature == "ca" and value in [0,1,2,3,4]:
+                    break
+                elif feature == "thal" and value in [0,1,2,3]:
+                    break
+                else:
+                    print("Invalid input! Please enter a valid value.")
+                    value = int(input(f"Enter {feature}: "))
+        else:
+            min_value,max_value=numeric_limit[feature]
+            value = float(input(f"Enter {feature} ({min_value} - {max_value}): "))
+            while(value<min_value or value>max_value):
+                print(f"Invalid input! Enter a value between {min_value} and {max_value}")
+                value=float(input(f"Enter {feature} ({min_value} - {max_value}):"))
+
+        new_patient.append(value)
+
+    new_patient_df=pd.DataFrame([new_patient], columns=x.columns)
+    new_patient_scaled=scaler.transform(new_patient_df)
+
+    prediction=model.predict(new_patient_scaled)
+
+    print("Heart Disease Prediction: ","Yes" if prediction[0]==1  else "No")
+
+    prob_no = model.predict_proba(new_patient_scaled)[0][0]*100
+    prob_yes = model.predict_proba(new_patient_scaled)[0][1]*100
+    print(f"Probability No: {prob_no:.2f}%, Yes: {prob_yes:.2f}%")
+
+    if(prob_yes>=0 and prob_yes<40):
+        print("Risk Level:Low risk")
+    elif(prob_yes>=40 and prob_yes<60):
+        print("Risk Level:Moderate risk")
+    elif(prob_yes>=60 and prob_yes<80):
+        print("Risk Level:High risk")
+    else:
+        print("Risk Level:Very high risk")
 
 if __name__=='__main__':
     main()
