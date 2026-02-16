@@ -4,6 +4,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import roc_auc_score
 
 def load_csv(path):
     return pd.read_csv(path)
@@ -12,7 +13,8 @@ def splitdata(x,y):
     return train_test_split(x,y,test_size=0.2,random_state=42)
 
 def trainmodel(x_train,y_train):
-    model=LogisticRegression(max_iter=5000)
+    # model=LogisticRegression(max_iter=5000)
+    model=RandomForestClassifier(n_estimators=3000,max_depth=6,random_state=42)
     model.fit(x_train,y_train)
     return model
 
@@ -60,10 +62,10 @@ def main():
     print("Testing data shape")
     print(x_test.shape)
 
-    scaler=StandardScaler()
+    # scaler=StandardScaler()
 
-    x_train=scaler.fit_transform(x_train)
-    x_test=scaler.transform(x_test)
+    # x_train=scaler.fit_transform(x_train)
+    # x_test=scaler.transform(x_test)
 
     model=trainmodel(x_train,y_train)
 
@@ -81,9 +83,20 @@ def main():
         "oldpeak": (0, 10)
     }
 
+    allowed_values = {
+    "sex": "[0 = Female, 1 = Male]",
+    "cp": "[0,1,2,3]",
+    "fbs": "[0 = No, 1 = Yes]",
+    "restecg": "[0,1,2]",
+    "exang": "[0 = No, 1 = Yes]",
+    "slope": "[0,1,2]",
+    "ca": "[0,1,2,3,4]",
+    "thal": "[0,1,2,3]"
+}
+
     for feature in x.columns:
         if feature in ["sex", "cp", "fbs", "restecg", "exang", "slope", "ca", "thal"]:
-            value = int(input(f"Enter {feature} : "))
+            value = int(input(f"Enter {feature} {allowed_values[feature]}: "))
             while True:
                 if feature == "sex" and value in [0,1]:
                     break
@@ -103,7 +116,7 @@ def main():
                     break
                 else:
                     print("Invalid input! Please enter a valid value.")
-                    value = int(input(f"Enter {feature}: "))
+                    value = int(input(f"Enter {feature} {allowed_values[feature]}: "))
         else:
             min_value,max_value=numeric_limit[feature]
             value = float(input(f"Enter {feature} ({min_value} - {max_value}): "))
@@ -114,14 +127,17 @@ def main():
         new_patient.append(value)
 
     new_patient_df=pd.DataFrame([new_patient], columns=x.columns)
-    new_patient_scaled=scaler.transform(new_patient_df)
+    # new_patient_scaled=scaler.transform(new_patient_df)
 
-    prediction=model.predict(new_patient_scaled)
+    # prediction=model.predict(new_patient_scaled)
+    prediction=model.predict(new_patient_df)
 
     print("Heart Disease Prediction: ","Yes" if prediction[0]==1  else "No")
 
-    prob_no = model.predict_proba(new_patient_scaled)[0][0]*100
-    prob_yes = model.predict_proba(new_patient_scaled)[0][1]*100
+    # prob_no = model.predict_proba(new_patient_scaled)[0][0]*100
+    # prob_yes = model.predict_proba(new_patient_scaled)[0][1]*100
+    prob_no = model.predict_proba(new_patient_df)[0][0]*100
+    prob_yes = model.predict_proba(new_patient_df)[0][1]*100
     print(f"Probability No: {prob_no:.2f}%, Yes: {prob_yes:.2f}%")
 
     if(prob_yes>=0 and prob_yes<40):
@@ -132,6 +148,9 @@ def main():
         print("Risk Level:High risk")
     else:
         print("Risk Level:Very high risk")
+
+    prob=model.predict_proba(x_test)[:,1]
+    print("AUC Score: ",roc_auc_score(y_test,prob))
 
 if __name__=='__main__':
     main()
