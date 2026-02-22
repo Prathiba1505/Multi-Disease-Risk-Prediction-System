@@ -5,16 +5,19 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve
+import joblib
 
 def load_csv(path):
     return pd.read_csv(path)
 
 def splitdata(x,y):
-    return train_test_split(x,y,test_size=0.2,random_state=42)
+    return train_test_split(x,y,test_size=0.2,random_state=42,stratify=y)
 
 def trainmodel(x_train,y_train):
     # model=LogisticRegression(max_iter=5000)
-    model=RandomForestClassifier(n_estimators=3000,max_depth=6,random_state=42)
+    model=RandomForestClassifier(n_estimators=200,max_depth=6,random_state=42)
     model.fit(x_train,y_train)
     return model
 
@@ -151,6 +154,25 @@ def main():
 
     prob=model.predict_proba(x_test)[:,1]
     print("AUC Score: ",roc_auc_score(y_test,prob))
+
+    feature_importance=model.feature_importances_
+    features=x_test.columns
+    plt.figure(figsize=(10,6))
+    plt.bar(features,feature_importance)
+    plt.title("Feature Importance")
+    plt.show()
+
+    frp,trp,_=roc_curve(y_test,prob)
+    plt.figure(figsize=(10,6))
+    plt.plot(frp,trp)
+    plt.plot([0,1],[0,1],'--')
+    plt.xlabel("False Positive Value")
+    plt.ylabel("True Positive Value")
+    plt.title("ROC Curve")
+    plt.show()
+
+    joblib.dump(model, "heart_model.pkl")
+    
 
 if __name__=='__main__':
     main()
