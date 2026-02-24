@@ -1,40 +1,89 @@
 import streamlit as st
-import pandas as pd
 import joblib
+import pandas as pd
 
-model = joblib.load("heart_model.pkl")
+# Load Models
+heart_model = joblib.load("heart_model.pkl")
+diabetes_model = joblib.load("diabetes_model.pkl")
 
-st.title("❤️ Heart Disease Prediction System")
+st.title("🏥 Multi-Risk Disease Prediction System")
+st.write("Enter patient health details below")
 
-st.header("Enter Patient Details")
+# ================= COMMON INPUTS =================
+st.subheader("🧍 Basic Information")
+name=st.text_input("Name")
+age = st.number_input("Age", 0, 120)
+sex = st.selectbox("Sex (0 = Female, 1 = Male)", [0,1])
 
-age = st.number_input("Age", 0, 100)
-sex = st.selectbox("Sex", [0,1])
-cp = st.selectbox("Chest Pain Type (cp)", [0,1,2,3])
+# ================= HEART INPUTS =================
+st.subheader("❤️ Heart Related Details")
+cp = st.selectbox("Chest Pain Type (0-3)", [0,1,2,3])
 trestbps = st.number_input("Resting Blood Pressure", 80, 250)
 chol = st.number_input("Cholesterol", 100, 600)
-fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [0,1])
-restecg = st.selectbox("Resting ECG", [0,1,2])
-thalach = st.number_input("Maximum Heart Rate", 60, 250)
-exang = st.selectbox("Exercise Induced Angina", [0,1])
+fbs = st.selectbox("Fasting Blood Sugar (0/1)", [0,1])
+restecg = st.selectbox("Rest ECG (0-2)", [0,1,2])
+thalach = st.number_input("Max Heart Rate", 60, 250)
+exang = st.selectbox("Exercise Induced Angina (0/1)", [0,1])
 oldpeak = st.number_input("Oldpeak", 0.0, 10.0)
-slope = st.selectbox("Slope", [0,1,2])
-ca = st.selectbox("CA", [0,1,2,3,4])
-thal = st.selectbox("Thal", [0,1,2,3])
+slope = st.selectbox("Slope (0-2)", [0,1,2])
+ca = st.selectbox("CA (0-4)", [0,1,2,3,4])
+thal = st.selectbox("Thal (0-3)", [0,1,2,3])
 
-if st.button("Predict"):
-    data = [[age, sex, cp, trestbps, chol, fbs, restecg,
-             thalach, exang, oldpeak, slope, ca, thal]]
+# ================= DIABETES INPUTS =================
+st.subheader("🩸 Diabetes Related Details")
+if sex==0:
+    pregnancies = st.number_input("Number of Pregnancies", min_value=0, max_value=20)
+else:
+    pregnancies=0
 
-    df = pd.DataFrame(data, columns=[
-        "age","sex","cp","trestbps","chol","fbs","restecg",
-        "thalach","exang","oldpeak","slope","ca","thal"
-    ])
+glucose = st.number_input("Glucose Level (Normal: 70-140)",50,300)
 
-    prediction = model.predict(df)
-    probability = model.predict_proba(df)[0][1] * 100
+blood_pressure = st.number_input("Blood Pressure (Normal: 60-140)",60,200)
 
-    if prediction[0] == 1:
-        st.error(f"⚠️ High Risk of Heart Disease ({probability:.2f}%)")
+skin_thickness = st.number_input("Skin Thickness (10-50)",10,100)
+
+insulin = st.number_input("Insulin Level (15-276)",15,900)
+
+bmi = st.number_input("BMI (15-40)",15.0,70.0)
+
+dpf = st.number_input("Diabetes Pedigree Function (0.0 - 2.5)",0.0,5.0)
+
+# ================= PREDICT =================
+if st.button("🔍 Predict Diseases"):
+
+    # Heart Prediction
+    heart_data = pd.DataFrame([[name,age,sex,cp,trestbps,chol,fbs,restecg,
+                                thalach,exang,oldpeak,slope,ca,thal]],
+                              columns=["name","age","sex","cp","trestbps","chol",
+                                       "fbs","restecg","thalach","exang",
+                                       "oldpeak","slope","ca","thal"])
+
+    heart_pred = heart_model.predict(heart_data)[0]
+    heart_prob = heart_model.predict_proba(heart_data)[0][1]
+
+    # Diabetes Prediction
+    diabetes_data = pd.DataFrame([[pregnancies, glucose, blood_pressure,
+                                   skin_thickness, insulin, bmi, dpf, age]],
+                                 columns=["Pregnancies","Glucose","BloodPressure",
+                                          "SkinThickness","Insulin","BMI",
+                                          "DiabetesPedigreeFunction","Age"])
+
+    diabetes_pred = diabetes_model.predict(diabetes_data)[0]
+    diabetes_prob = diabetes_model.predict_proba(diabetes_data)[0][1]
+
+    st.subheader("📋 Prediction Results")
+
+    # Show Results
+    if heart_pred == 1:
+        st.error(f"⚠️ High Risk of Heart Disease ({heart_prob*100:.2f}%)")
     else:
-        st.success(f"✅ Low Risk of Heart Disease ({probability:.2f}%)")
+        st.success(f"✅ Low Risk of Heart Disease ({heart_prob*100:.2f}%)")
+
+    if diabetes_pred == 1:
+        st.error(f"⚠️ High Risk of Diabetes ({diabetes_prob*100:.2f}%)")
+    else:
+        st.success(f"✅ Low Risk of Diabetes ({diabetes_prob*100:.2f}%)")
+
+    # Combined Summary
+    if heart_pred == 1 and diabetes_pred == 1:
+        st.warning("🚨 Patient at risk of BOTH Heart Disease and Diabetes")
