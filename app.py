@@ -2,20 +2,17 @@ import streamlit as st
 import joblib
 import pandas as pd
 
-# Load Models
 heart_model = joblib.load("heart_model.pkl")
 diabetes_model = joblib.load("diabetes_model.pkl")
 
 st.title("🏥 Multi-Risk Disease Prediction System")
 st.write("Enter patient health details below")
 
-# ================= COMMON INPUTS =================
 st.subheader("🧍 Basic Information")
 name=st.text_input("Name")
 age = st.number_input("Age", 0, 120)
 sex = st.selectbox("Sex (0 = Female, 1 = Male)", [0,1])
 
-# ================= HEART INPUTS =================
 st.subheader("❤️ Heart Related Details")
 cp = st.selectbox("Chest Pain Type (0-3)", [0,1,2,3])
 trestbps = st.number_input("Resting Blood Pressure", 80, 250)
@@ -29,10 +26,9 @@ slope = st.selectbox("Slope (0-2)", [0,1,2])
 ca = st.selectbox("CA (0-4)", [0,1,2,3,4])
 thal = st.selectbox("Thal (0-3)", [0,1,2,3])
 
-# ================= DIABETES INPUTS =================
 st.subheader("🩸 Diabetes Related Details")
 if sex==0:
-    pregnancies = st.number_input("Number of Pregnancies", min_value=0, max_value=20)
+    pregnancies = st.number_input("Number of Pregnancies",0,20)
 else:
     pregnancies=0
 
@@ -48,20 +44,18 @@ bmi = st.number_input("BMI (15-40)",15.0,70.0)
 
 dpf = st.number_input("Diabetes Pedigree Function (0.0 - 2.5)",0.0,5.0)
 
-# ================= PREDICT =================
+
 if st.button("🔍 Predict Diseases"):
 
-    # Heart Prediction
-    heart_data = pd.DataFrame([[name,age,sex,cp,trestbps,chol,fbs,restecg,
+    heart_data = pd.DataFrame([[age,sex,cp,trestbps,chol,fbs,restecg,
                                 thalach,exang,oldpeak,slope,ca,thal]],
-                              columns=["name","age","sex","cp","trestbps","chol",
+                              columns=["age","sex","cp","trestbps","chol",
                                        "fbs","restecg","thalach","exang",
                                        "oldpeak","slope","ca","thal"])
 
     heart_pred = heart_model.predict(heart_data)[0]
     heart_prob = heart_model.predict_proba(heart_data)[0][1]
 
-    # Diabetes Prediction
     diabetes_data = pd.DataFrame([[pregnancies, glucose, blood_pressure,
                                    skin_thickness, insulin, bmi, dpf, age]],
                                  columns=["Pregnancies","Glucose","BloodPressure",
@@ -71,9 +65,9 @@ if st.button("🔍 Predict Diseases"):
     diabetes_pred = diabetes_model.predict(diabetes_data)[0]
     diabetes_prob = diabetes_model.predict_proba(diabetes_data)[0][1]
 
-    st.subheader("📋 Prediction Results")
+    st.subheader(f"📋 Prediction Results for {name}")
 
-    # Show Results
+    
     if heart_pred == 1:
         st.error(f"⚠️ High Risk of Heart Disease ({heart_prob*100:.2f}%)")
     else:
@@ -84,6 +78,6 @@ if st.button("🔍 Predict Diseases"):
     else:
         st.success(f"✅ Low Risk of Diabetes ({diabetes_prob*100:.2f}%)")
 
-    # Combined Summary
+
     if heart_pred == 1 and diabetes_pred == 1:
         st.warning("🚨 Patient at risk of BOTH Heart Disease and Diabetes")
