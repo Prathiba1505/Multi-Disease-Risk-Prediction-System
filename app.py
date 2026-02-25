@@ -5,7 +5,7 @@ import pandas as pd
 heart_model = joblib.load("heart_model.pkl")
 diabetes_model = joblib.load("diabetes_model.pkl")
 
-st.title("🏥 Multi-Risk Disease Prediction System")
+st.title("🏥 Healthcare Disease Prediction System")
 st.write("Enter patient health details below")
 
 st.subheader("🧍 Basic Information")
